@@ -87,19 +87,23 @@ def sprints(team_name):
 
     start_at = int(request.args.get('start_at', 0))
     sprints_data = jira.get_sprints(board_id, start_at=start_at)
-    # Enrich sprints with properties
     enriched_sprints = []
     for sprint in sprints_data["values"]:
         sprint_props = {}
         if isinstance(jira, MockJiraClient):
             all_props = jira.properties.get(sprint["id"], {})
             sprint_props = {k: v for k, v in all_props.items()}
+            # Convert Capacity decimal to percentage for display
+            if "Capacity" in sprint_props and sprint_props["Capacity"] is not None:
+                sprint_props["Capacity"] = int(sprint_props["Capacity"] * 100)
         else:
-            # For real JIRA, we'd need to fetch all properties (not implemented here)
-            for key in ["Planned", "Capacity"]:  # Example keys for real API
+            for key in ["Planned", "Capacity"]:
                 value = jira.get_sprint_property(sprint["id"], key)
                 if value is not None:
-                    sprint_props[key] = value
+                    if key == "Capacity":
+                        sprint_props[key] = int(value * 100)  # Convert decimal to percentage
+                    else:
+                        sprint_props[key] = value
         sprint["properties"] = sprint_props
         enriched_sprints.append(sprint)
 
@@ -116,13 +120,19 @@ def properties(team_name, sprint_id):
         for key in default_props:
             value = request.form.get(key)
             if value is not None:
-                try:
-                    int_value = int(value)
-                    if key == "Capacity" and not (0 <= int_value <= 100):
+                if value == '':  # Allow empty string as valid
+                    jira.set_sprint_property(sprint_id, key, None)
+                else:
+                    try:
+                        int_value = int(value)
+                        if key == "Capacity":
+                            if int_value not in range(0, 101):  # Validate 0-100
+                                continue
+                            jira.set_sprint_property(sprint_id, key, int_value / 100.0)  # Convert to decimal
+                        else:
+                            jira.set_sprint_property(sprint_id, key, int_value)
+                    except ValueError:
                         continue
-                    jira.set_sprint_property(sprint_id, key, int_value)
-                except ValueError:
-                    continue
 
         if 'add_property' in request.form:
             new_key = request.form.get('new_key')
@@ -148,7 +158,10 @@ def properties(team_name, sprint_id):
     for key in default_props:
         value = jira.get_sprint_property(sprint_id, key)
         if value is not None:
-            default_props[key] = value
+            if key == "Capacity":
+                default_props[key] = int(value * 100)  # Convert decimal to percentage for UI
+            else:
+                default_props[key] = value
 
     if isinstance(jira, MockJiraClient):
         all_props = jira.properties.get(sprint_id, {})

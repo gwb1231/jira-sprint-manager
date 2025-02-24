@@ -14,6 +14,10 @@ body {
     background-color: #6c757d; /* Gray (Bootstrap's gray-700) */
 }
 
+.bg-light-blue {
+    background-color: #cce5ff; /* Light blue */
+}
+
 /* Override Bootstrap accordion-button expanded state */
 .accordion-button.bg-dark-green:not(.collapsed) {
     background-color: #2f4f4f; /* Keep dark green when open */
