@@ -3,45 +3,93 @@
 {% block content %}
     <h1 class="mb-4">Sprints for {{ team_name }}</h1>
 
-    <!-- Active Sprint Module -->
-    {% set active_sprint = sprints|selectattr("state", "equalto", "active")|first %}
-    {% if active_sprint %}
-        <div class="card mb-4">
-            <div class="card-header bg-dark-green text-white">
-                <h5 class="mb-0">Active Sprint</h5>
-            </div>
-            <div class="card-body">
-                <h5 class="card-title">{{ active_sprint.name }}</h5>
-                <p class="card-text">Status: {{ active_sprint.state }}</p>
-                <p class="card-text">Start: {{ active_sprint.startDate|truncate(10, True, '') }}</p>
-                <p class="card-text">End: {{ active_sprint.endDate|truncate(10, True, '') }}</p>
-                <a href="{{ url_for('properties', team_name=team_name, sprint_id=active_sprint.id) }}"
-                   class="btn btn-outline-primary">Manage Properties</a>
-            </div>
-        </div>
-    {% endif %}
-
-    <!-- Future Sprints Module -->
-    <div class="card">
-        <div class="card-header bg-gray text-white">
-            <h5 class="mb-0">Future Sprints</h5>
-        </div>
-        <div class="card-body">
-            <div class="row">
-            {% for sprint in sprints|selectattr("state", "equalto", "future") %}
-                <div class="col-md-4 mb-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ sprint.name }}</h5>
-                            <p class="card-text">Status: {{ sprint.state }}</p>
-                            <p class="card-text">Start: {{ sprint.startDate|truncate(10, True, '') }}</p>
-                            <p class="card-text">End: {{ sprint.endDate|truncate(10, True, '') }}</p>
-                            <a href="{{ url_for('properties', team_name=team_name, sprint_id=sprint.id) }}"
-                               class="btn btn-outline-primary">Manage Properties</a>
+    <div class="accordion" id="sprintsAccordion">
+        <!-- Active Sprint Module -->
+        {% set active_sprint = sprints|selectattr("state", "equalto", "active")|first %}
+        {% if active_sprint %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="activeSprintHeading">
+                    <button class="accordion-button bg-dark-green text-white" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#activeSprintCollapse"
+                            aria-expanded="true" aria-controls="activeSprintCollapse">
+                        Active Sprint
+                    </button>
+                </h2>
+                <div id="activeSprintCollapse" class="accordion-collapse collapse show"
+                     aria-labelledby="activeSprintHeading" data-bs-parent="#sprintsAccordion">
+                    <div class="accordion-body">
+                        <div class="card mb-0 border-0">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">{{ active_sprint.name }}</h5>
+                                        <p class="card-text">Status: {{ active_sprint.state }}</p>
+                                        <p class="card-text">Start: {{ active_sprint.startDate|truncate(10, True, '') }}</p>
+                                        <p class="card-text">End: {{ active_sprint.endDate|truncate(10, True, '') }}</p>
+                                        <a href="{{ url_for('properties', team_name=team_name, sprint_id=active_sprint.id) }}"
+                                           class="btn btn-outline-primary">Manage Properties</a>
+                                    </div>
+                                    <div class="text-end">
+                                        <h6>Properties</h6>
+                                        {% if active_sprint.properties %}
+                                            {% for key, value in active_sprint.properties.items() %}
+                                                <p class="card-text mb-1"><small>{{ key }}: {{ value }}</small></p>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p class="card-text text-muted"><small>No properties</small></p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Future Sprints Module -->
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="futureSprintsHeading">
+                <button class="accordion-button bg-gray text-white" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#futureSprintsCollapse"
+                        aria-expanded="true" aria-controls="futureSprintsCollapse">
+                    Future Sprints
+                </button>
+            </h2>
+            <div id="futureSprintsCollapse" class="accordion-collapse collapse show"
+                 aria-labelledby="futureSprintsHeading" data-bs-parent="#sprintsAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                    {% for sprint in sprints|selectattr("state", "equalto", "future") %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h5 class="card-title">{{ sprint.name }}</h5>
+                                            <p class="card-text">Status: {{ sprint.state }}</p>
+                                            <p class="card-text">Start: {{ sprint.startDate|truncate(10, True, '') }}</p>
+                                            <p class="card-text">End: {{ sprint.endDate|truncate(10, True, '') }}</p>
+                                            <a href="{{ url_for('properties', team_name=team_name, sprint_id=sprint.id) }}"
+                                               class="btn btn-outline-primary">Manage Properties</a>
+                                        </div>
+                                        <div class="text-end">
+                                            <h6>Properties</h6>
+                                            {% if sprint.properties %}
+                                                {% for key, value in sprint.properties.items() %}
+                                                    <p class="card-text mb-1"><small>{{ key }}: {{ value }}</small></p>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p class="card-text text-muted"><small>No properties</small></p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>

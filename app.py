@@ -43,7 +43,6 @@ def teams():
             board_id = request.form['board_id']
             teams[team_name] = int(board_id)
             save_teams(teams)
-            # Reload teams after saving to ensure latest data
             teams = load_teams()
         elif 'delete_team' in request.form:
             team_name = request.form['team_name']
@@ -51,7 +50,6 @@ def teams():
                 del teams[team_name]
                 save_teams(teams)
 
-    # Populate board names after POST or on GET
     for team, board_id in teams.items():
         if board_id:
             if isinstance(jira, MockJiraClient):
@@ -89,7 +87,23 @@ def sprints(team_name):
 
     start_at = int(request.args.get('start_at', 0))
     sprints_data = jira.get_sprints(board_id, start_at=start_at)
-    return render_template('sprints.html', team_name=team_name, sprints=sprints_data["values"],
+    # Enrich sprints with properties
+    enriched_sprints = []
+    for sprint in sprints_data["values"]:
+        sprint_props = {}
+        if isinstance(jira, MockJiraClient):
+            all_props = jira.properties.get(sprint["id"], {})
+            sprint_props = {k: v for k, v in all_props.items()}
+        else:
+            # For real JIRA, we'd need to fetch all properties (not implemented here)
+            for key in ["Planned", "Capacity"]:  # Example keys for real API
+                value = jira.get_sprint_property(sprint["id"], key)
+                if value is not None:
+                    sprint_props[key] = value
+        sprint["properties"] = sprint_props
+        enriched_sprints.append(sprint)
+
+    return render_template('sprints.html', team_name=team_name, sprints=enriched_sprints,
                            start_at=start_at, total_sprints=sprints_data["total"])
 
 
