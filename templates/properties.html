@@ -2,39 +2,82 @@
 
 {% block content %}
     <h1 class="mb-4">Properties for Sprint {{ sprint_id }}</h1>
-    <div class="card">
+
+    <!-- Default Properties Section -->
+    <div class="card mb-4">
         <div class="card-body">
-            <form method="POST">
-                <h3 class="card-title">Default Properties</h3>
+            <h3 class="card-title">Default Properties</h3>
+            <form method="POST" action="{{ url_for('properties', team_name=team_name, sprint_id=sprint_id) }}">
                 <div class="mb-3">
                     <label class="form-label">Planned</label>
-                    <input type="number" name="Planned" value="{{ default_props.Planned }}" 
+                    <input type="number" name="Planned" value="{{ default_props.Planned }}"
                            class="form-control" min="0" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Capacity (%)</label>
                     <div class="input-group">
-                        <input type="number" name="Capacity" value="{{ default_props.Capacity }}" 
+                        <input type="number" name="Capacity" value="{{ default_props.Capacity }}"
                                class="form-control" min="0" max="100" required>
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
-
-                <h3 class="card-title mt-4">Custom Properties</h3>
-                {% for key, value in custom_props.items() %}
-                    <p><strong>{{ key }}:</strong> {{ value }}</p>
-                {% endfor %}
-                <div class="mb-3">
-                    <label class="form-label">New Property Key</label>
-                    <input type="text" name="new_key" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Value</label>
-                    <input type="text" name="new_value" class="form-control">
-                </div>
-                <button type="submit" class="btn btn-primary">Save Properties</button>
+                <button type="submit" class="btn btn-primary">Save Default Properties</button>
             </form>
         </div>
     </div>
+
+    <!-- Custom Properties Section -->
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-3">Custom Properties</h3>
+            <div class="row">
+                {% for key, value in custom_props.items() %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ key }}</h5>
+                                <input type="text" class="form-control mb-2" name="value_{{ key }}"
+                                       value="{{ value }}" form="update_props_{{ key }}">
+                                <div class="d-flex justify-content-between">
+                                    <form method="POST" action="{{ url_for('properties', team_name=team_name, sprint_id=sprint_id) }}"
+                                          id="update_props_{{ key }}">
+                                        <input type="hidden" name="property_key" value="{{ key }}">
+                                        <button type="submit" name="update_property" class="btn btn-primary btn-sm">Update</button>
+                                    </form>
+                                    {% if key not in ['Planned', 'Capacity'] %}
+                                        <form method="POST" action="{{ url_for('properties', team_name=team_name, sprint_id=sprint_id) }}"
+                                              class="d-inline">
+                                            <input type="hidden" name="property_key" value="{{ key }}">
+                                            <button type="submit" name="delete_property" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Add Custom Property Button and Form -->
+            <button type="button" class="btn btn-success mt-3" data-bs-toggle="collapse" data-bs-target="#addPropertyForm">
+                Add Custom Property
+            </button>
+            <div class="collapse mt-3" id="addPropertyForm">
+                <form method="POST" action="{{ url_for('properties', team_name=team_name, sprint_id=sprint_id) }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <input type="text" name="new_key" class="form-control" placeholder="Property Name" required>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="new_value" class="form-control" placeholder="Value" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" name="add_property" class="btn btn-success">Add</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <a href="{{ url_for('sprints', team_name=team_name) }}" class="btn btn-secondary mt-3">Back to Sprints</a>
 {% endblock %}

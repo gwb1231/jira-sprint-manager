@@ -32,6 +32,26 @@ def teams():
     team_board_names = {}
     start_at = int(request.args.get('start_at', 0))
 
+    if request.method == 'POST':
+        if 'add_team' in request.form:
+            team_name = request.form['team_name']
+            if team_name and team_name not in teams:
+                teams[team_name] = None
+                save_teams(teams)
+        elif 'map_board' in request.form:
+            team_name = request.form['team_name']
+            board_id = request.form['board_id']
+            teams[team_name] = int(board_id)
+            save_teams(teams)
+            # Reload teams after saving to ensure latest data
+            teams = load_teams()
+        elif 'delete_team' in request.form:
+            team_name = request.form['team_name']
+            if team_name in teams:
+                del teams[team_name]
+                save_teams(teams)
+
+    # Populate board names after POST or on GET
     for team, board_id in teams.items():
         if board_id:
             if isinstance(jira, MockJiraClient):
@@ -45,23 +65,6 @@ def teams():
                 except:
                     team_board_names[team] = "Error Fetching Board"
 
-    if request.method == 'POST':
-        if 'add_team' in request.form:
-            team_name = request.form['team_name']
-            if team_name and team_name not in teams:
-                teams[team_name] = None
-                save_teams(teams)
-        elif 'map_board' in request.form:
-            team_name = request.form['team_name']
-            board_id = request.form['board_id']
-            teams[team_name] = int(board_id)
-            save_teams(teams)
-        elif 'delete_team' in request.form:
-            team_name = request.form['team_name']
-            if team_name in teams:
-                del teams[team_name]
-                save_teams(teams)
-
     return render_template('teams.html', teams=teams, team_board_names=team_board_names, start_at=start_at)
 
 
@@ -70,7 +73,6 @@ def search_boards():
     search_term = request.args.get('term', '')
     start_at = int(request.args.get('start_at', 0))
     boards_data = jira.search_boards(search_term, start_at=start_at)
-    print(f"Search term: {search_term}, Start at: {start_at}, Response: {boards_data}")  # Debugging
     return jsonify({
         'boards': [{'id': b['id'], 'name': b['name']} for b in boards_data['values']],
         'total': boards_data['total'],
@@ -108,10 +110,26 @@ def properties(team_name, sprint_id):
                 except ValueError:
                     continue
 
-        new_key = request.form.get('new_key')
-        new_value = request.form.get('new_value')
-        if new_key and new_value:
-            jira.set_sprint_property(sprint_id, new_key, new_value)
+        if 'add_property' in request.form:
+            new_key = request.form.get('new_key')
+            new_value = request.form.get('new_value')
+            if new_key and new_value and new_key not in ['Planned', 'Capacity']:
+                jira.set_sprint_property(sprint_id, new_key, new_value)
+
+        if 'update_property' in request.form:
+            key = request.form.get('property_key')
+            new_value = request.form.get(f'value_{key}')
+            if key and new_value and key not in ['Planned', 'Capacity']:
+                jira.set_sprint_property(sprint_id, key, new_value)
+
+        if 'delete_property' in request.form:
+            key = request.form.get('property_key')
+            if key and key not in ['Planned', 'Capacity']:
+                if isinstance(jira, MockJiraClient):
+                    if sprint_id in jira.properties and key in jira.properties[sprint_id]:
+                        del jira.properties[sprint_id][key]
+                else:
+                    pass  # Real JIRA DELETE not implemented
 
     for key in default_props:
         value = jira.get_sprint_property(sprint_id, key)
