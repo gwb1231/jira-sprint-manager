@@ -1,7 +1,7 @@
 import requests
 import json
 from config import Config
-import datetime
+from datetime import datetime, timedelta
 
 class JiraClient:
     def __init__(self):
@@ -63,13 +63,34 @@ class MockJiraClient:
         self.boards = [
             {"id": i, "name": f"Team {chr(65+i-1)} Board"} for i in range(1, 101)  # 100 boards
         ]
-        self.sprints = {
-            board["id"]: [
-                {"id": board["id"] * 100 + j, "name": f"Sprint {j}", "state": "active" if j % 2 == 0 else "future",
-                 "startDate": "2025-02-20T00:00:00Z", "endDate": "2025-03-05T00:00:00Z"}
-                for j in range(1, 61)  # 60 sprints per board
-            ] for board in self.boards[:5]  # Only first 5 boards have sprints
-        }
+        # Base date: Feb 23, 2025 (current date)
+        base_date = datetime(2025, 2, 23)
+        self.sprints = {}
+        for board in self.boards[:5]:  # First 5 boards have sprints
+            board_sprints = []
+            prev_end_date = None
+            for j in range(1, 11):  # 10 sprints per board
+                if j == 1:
+                    start_date = base_date  # First sprint starts on base date
+                else:
+                    start_date = prev_end_date + timedelta(days=1)  # Start 1 day after previous end
+                end_date = start_date + timedelta(days=13)  # 14-day sprint (13 days + start day)
+                # Determine state based on current date (Feb 23, 2025)
+                if start_date <= base_date < end_date:
+                    state = "active"  # Current sprint
+                elif start_date > base_date:
+                    state = "future"  # Upcoming sprints
+                else:
+                    continue  # Skip past sprints (active/future only)
+                board_sprints.append({
+                    "id": board["id"] * 100 + j,
+                    "name": f"Sprint {j}",
+                    "state": state,
+                    "startDate": start_date.strftime("%Y-%m-%dT00:00:00Z"),
+                    "endDate": end_date.strftime("%Y-%m-%dT00:00:00Z")
+                })
+                prev_end_date = end_date
+            self.sprints[board["id"]] = board_sprints
         self.properties = {sprint["id"]: {} for board_sprints in self.sprints.values() for sprint in board_sprints}
 
     def search_boards(self, name_filter="", start_at=0, max_results=50):

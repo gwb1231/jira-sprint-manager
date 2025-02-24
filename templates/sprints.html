@@ -2,20 +2,50 @@
 
 {% block content %}
     <h1 class="mb-4">Sprints for {{ team_name }}</h1>
-    <div class="row">
-    {% for sprint in sprints %}
-        <div class="col-md-4 mb-3">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ sprint.name }}</h5>
-                    <p class="card-text">Status: {{ sprint.state }}</p>
-                    <a href="{{ url_for('properties', team_name=team_name, sprint_id=sprint.id) }}" 
-                       class="btn btn-outline-primary">Manage Properties</a>
-                </div>
+
+    <!-- Active Sprint Module -->
+    {% set active_sprint = sprints|selectattr("state", "equalto", "active")|first %}
+    {% if active_sprint %}
+        <div class="card mb-4">
+            <div class="card-header bg-dark-green text-white">
+                <h5 class="mb-0">Active Sprint</h5>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ active_sprint.name }}</h5>
+                <p class="card-text">Status: {{ active_sprint.state }}</p>
+                <p class="card-text">Start: {{ active_sprint.startDate|truncate(10, True, '') }}</p>
+                <p class="card-text">End: {{ active_sprint.endDate|truncate(10, True, '') }}</p>
+                <a href="{{ url_for('properties', team_name=team_name, sprint_id=active_sprint.id) }}"
+                   class="btn btn-outline-primary">Manage Properties</a>
             </div>
         </div>
-    {% endfor %}
+    {% endif %}
+
+    <!-- Future Sprints Module -->
+    <div class="card">
+        <div class="card-header bg-gray text-white">
+            <h5 class="mb-0">Future Sprints</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+            {% for sprint in sprints|selectattr("state", "equalto", "future") %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ sprint.name }}</h5>
+                            <p class="card-text">Status: {{ sprint.state }}</p>
+                            <p class="card-text">Start: {{ sprint.startDate|truncate(10, True, '') }}</p>
+                            <p class="card-text">End: {{ sprint.endDate|truncate(10, True, '') }}</p>
+                            <a href="{{ url_for('properties', team_name=team_name, sprint_id=sprint.id) }}"
+                               class="btn btn-outline-primary">Manage Properties</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
     </div>
+
     <nav aria-label="Sprint pagination" class="mt-3">
         <ul class="pagination justify-content-center">
             <li class="page-item {% if start_at == 0 %}disabled{% endif %}">

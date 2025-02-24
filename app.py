@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from jira_client import get_jira_client, MockJiraClient
 import json
 import os
@@ -29,7 +29,6 @@ def save_teams(teams):
 @app.route('/', methods=['GET', 'POST'])
 def teams():
     teams = load_teams()
-    boards = []
     team_board_names = {}
     start_at = int(request.args.get('start_at', 0))
 
@@ -52,11 +51,6 @@ def teams():
             if team_name and team_name not in teams:
                 teams[team_name] = None
                 save_teams(teams)
-        elif 'search_board' in request.form:
-            search_term = request.form['search_term']
-            boards_data = jira.search_boards(search_term, start_at=start_at)
-            boards = boards_data["values"]
-            total_boards = boards_data["total"]
         elif 'map_board' in request.form:
             team_name = request.form['team_name']
             board_id = request.form['board_id']
@@ -68,8 +62,20 @@ def teams():
                 del teams[team_name]
                 save_teams(teams)
 
-    return render_template('teams.html', teams=teams, boards=boards, team_board_names=team_board_names,
-                           start_at=start_at, total_boards=locals().get('total_boards', 0))
+    return render_template('teams.html', teams=teams, team_board_names=team_board_names, start_at=start_at)
+
+
+@app.route('/search_boards', methods=['GET'])
+def search_boards():
+    search_term = request.args.get('term', '')
+    start_at = int(request.args.get('start_at', 0))
+    boards_data = jira.search_boards(search_term, start_at=start_at)
+    print(f"Search term: {search_term}, Start at: {start_at}, Response: {boards_data}")  # Debugging
+    return jsonify({
+        'boards': [{'id': b['id'], 'name': b['name']} for b in boards_data['values']],
+        'total': boards_data['total'],
+        'start_at': boards_data['startAt']
+    })
 
 
 @app.route('/sprints/<team_name>')

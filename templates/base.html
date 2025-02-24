@@ -6,6 +6,78 @@
     <title>Sprint Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script defer>
+        console.log('Script loaded immediately');  // Immediate confirmation
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded');
+
+            const searchInputs = document.querySelectorAll('.board-search');
+            console.log('Found search inputs:', searchInputs.length);
+
+            let debounceTimeout;
+
+            searchInputs.forEach(input => {
+                console.log('Attaching listener to:', input);
+                input.addEventListener('input', function() {
+                    clearTimeout(debounceTimeout);
+                    debounceTimeout = setTimeout(async () => {
+                        const term = this.value;
+                        const team = this.dataset.team;
+                        const resultsContainer = this.nextElementSibling;
+                        const mapForm = resultsContainer.nextElementSibling;
+                        const boardIdInput = mapForm.querySelector('.board-id');
+
+                        console.log('Typing:', term);
+
+                        if (term.length < 2) {
+                            resultsContainer.innerHTML = '';
+                            resultsContainer.classList.remove('show');
+                            mapForm.classList.add('d-none');
+                            return;
+                        }
+
+                        try {
+                            const url = `/search_boards?term=${encodeURIComponent(term)}&start_at=0`;
+                            console.log('Fetching:', url);
+                            const response = await fetch(url);
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            const data = await response.json();
+                            console.log('Received data:', data);
+
+                            resultsContainer.innerHTML = '';
+                            if (data.boards && data.boards.length > 0) {
+                                data.boards.forEach(board => {
+                                    const item = document.createElement('a');
+                                    item.classList.add('dropdown-item');
+                                    item.href = '#';
+                                    item.textContent = `${board.name} (ID: ${board.id})`;
+                                    item.addEventListener('click', (e) => {
+                                        e.preventDefault();
+                                        input.value = board.name;
+                                        boardIdInput.value = board.id;
+                                        resultsContainer.classList.remove('show');
+                                        mapForm.classList.remove('d-none');
+                                    });
+                                    resultsContainer.appendChild(item);
+                                });
+                                resultsContainer.classList.add('show');
+                            } else {
+                                resultsContainer.innerHTML = '<div class="dropdown-item">No boards found</div>';
+                                resultsContainer.classList.add('show');
+                            }
+                        } catch (error) {
+                            console.error('Fetch error:', error);
+                            resultsContainer.innerHTML = '<div class="dropdown-item">Error fetching boards</div>';
+                            resultsContainer.classList.add('show');
+                        }
+                    }, 300);
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
