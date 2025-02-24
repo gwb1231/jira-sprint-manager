@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">Sprints for {{ team_name }}</h1>
+    <div class="row">
+    {% for sprint in sprints %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ sprint.name }}</h5>
+                    <p class="card-text">Status: {{ sprint.state }}</p>
+                    <a href="{{ url_for('properties', team_name=team_name, sprint_id=sprint.id) }}" 
+                       class="btn btn-outline-primary">Manage Properties</a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+    <nav aria-label="Sprint pagination" class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if start_at == 0 %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('sprints', team_name=team_name, start_at=start_at-50) if start_at > 0 else '#' }}">Previous</a>
+            </li>
+            <li class="page-item {% if start_at + 50 >= total_sprints %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('sprints', team_name=team_name, start_at=start_at+50) if start_at + 50 < total_sprints else '#' }}">Next</a>
+            </li>
+        </ul>
+    </nav>
+    <a href="{{ url_for('teams') }}" class="btn btn-secondary mt-3">Back to Teams</a>
+{% endblock %}

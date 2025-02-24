@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="mb-4">Manage Teams</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST" class="row g-3">
+                <div class="col-md-6">
+                    <input type="text" name="team_name" class="form-control" placeholder="Enter Team Name" required>
+                </div>
+                <div class="col-md-6">
+                    <button type="submit" name="add_team" class="btn btn-primary">Add Team</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <h2>Your Teams</h2>
+    <div class="row">
+    {% for team, board_id in teams.items() %}
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ team }}</h5>
+                    {% if board_id %}
+                        <p class="card-text">Board: {{ team_board_names[team] }}</p>
+                        <a href="{{ url_for('sprints', team_name=team) }}" class="btn btn-outline-primary">View Sprints</a>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="team_name" value="{{ team }}">
+                            <button type="submit" name="delete_team" class="btn btn-danger btn-sm ms-2">Delete</button>
+                        </form>
+                    {% else %}
+                        <form method="POST" class="row g-2">
+                            <div class="col-8">
+                                <input type="text" name="search_term" class="form-control" placeholder="Search boards">
+                            </div>
+                            <input type="hidden" name="team_name" value="{{ team }}">
+                            <div class="col-4">
+                                <button type="submit" name="search_board" class="btn btn-secondary">Search</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+
+    {% if boards %}
+        <h2 class="mt-4">Board Options</h2>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="team_name" value="{{ request.form.team_name }}">
+                    <select name="board_id" class="form-select mb-3">
+                        {% for board in boards %}
+                            <option value="{{ board.id }}">{{ board.name }} (ID: {{ board.id }})</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" name="map_board" class="btn btn-success">Map Board</button>
+                </form>
+                <nav aria-label="Board pagination" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if start_at == 0 %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('teams', start_at=start_at-50) if start_at > 0 else '#' }}">Previous</a>
+                        </li>
+                        <li class="page-item {% if start_at + 50 >= total_boards %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('teams', start_at=start_at+50) if start_at + 50 < total_boards else '#' }}">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
